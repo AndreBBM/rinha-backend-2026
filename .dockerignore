@@ -7,9 +7,7 @@
 target
 
 # Local large/generated artifacts (mounted at runtime instead)
-test.bin
 test.txt
-references.json.gz
 
 # Misc
 **/*.rs.bk

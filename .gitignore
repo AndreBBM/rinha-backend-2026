@@ -17,6 +17,6 @@ Thumbs.db
 .env.*
 
 # Local large/generated artifacts (keep out of Git)
-/test.bin
 /test.txt
-/references.json.gz
+
+/todo.txt

@@ -20,8 +20,6 @@ services:
     build: .
     environment:
       - DB_PATH=/app/test.bin
-    volumes:
-      - ./test.bin:/app/test.bin:ro
     deploy:
       resources:
         limits:
@@ -33,8 +31,6 @@ services:
     build: .
     environment:
       - DB_PATH=/app/test.bin
-    volumes:
-      - ./test.bin:/app/test.bin:ro
     deploy:
       resources:
         limits:
