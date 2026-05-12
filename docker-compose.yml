@@ -17,11 +17,9 @@ services:
 
   # Instância 1
   api01:
-    build: .
+    image: andrebbmelo/rinha-api-2026:latest # Imagem pública
     environment:
       - DB_PATH=/app/test.bin
-    volumes:
-      - ./test.bin:/app/test.bin:ro
     deploy:
       resources:
         limits:
@@ -30,11 +28,9 @@ services:
 
   # Instância 2
   api02:
-    build: .
+    image: andrebbmelo/rinha-api-2026:latest # Imagem pública
     environment:
       - DB_PATH=/app/test.bin
-    volumes:
-      - ./test.bin:/app/test.bin:ro
     deploy:
       resources:
         limits:
