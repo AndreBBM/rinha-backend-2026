@@ -24,3 +24,4 @@ chrono = { version = "0.4", features = ["serde"] }
 # Para busca vetorial rápida, considere usar SIMD ou memmap2 se carregar de arquivo
 memmap2 = "0.9"
 flate2 = "1.0"
+bytemuck = "1.25.0"

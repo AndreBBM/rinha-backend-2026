@@ -8,11 +8,9 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc, Datelike, Timelike};
-use std::collections::HashMap;
 use std::sync::Arc;
 use memmap2::Mmap;
 use std::fs::File;
-use std::io::{self, Write};
 
 // --- CONSTANTES DE NORMALIZAÇÃO ---
 const MAX_AMOUNT: f32 = 10000.0;
@@ -155,9 +153,9 @@ fn vectorize(payload: &TransactionPayload) -> [f32; 14] {
 
 fn distancia_euclidiana(v1: &[f32; 14], v2: &[f32; 14]) -> f32 {
     v1.iter().zip(v2.iter())
-        .map(|(a, b)| (a - b).powi(2))
+        .map(|(a, b)| (a - b).abs())
         .sum::<f32>()
-        .sqrt()
+        // .sqrt() // Para comparação de distâncias, a raiz quadrada é desnecessária e pode ser omitida para ganho de performance
 }
 
 // --- ESTADO DA APLICAÇÃO ---
@@ -183,22 +181,19 @@ async fn fraud_score(
     axum::extract::State(state): axum::extract::State<Arc<AppState>>,
     Json(payload): Json<TransactionPayload>,
 ) -> Json<FraudResponse> {
-    let input_vector = vectorize(&payload);
-    print!("Input vector: {:?} - ", input_vector);
-    io::stdout().flush().ok();
+    let input_vector: [f32; 14] = vectorize(&payload);
     let mut mais_proximos: [f32; 10] = [f32::MAX; 10];
     let mut distancia: f32;
-    
+    let data: &[u8] = &state.data; 
+
     for i in 0..3_000_000 {
         let start = i * 57;
-        let end = start + 56;
-        let vec_bytes: &[u8] = &state.data[start..end];
-        let legit: u8 = state.data[end];
+        let vec_bytes: &[u8] = &state.data[start..start + 56];
+        let legit: u8 = state.data[start + 56] as u8;
         
         let mut vetor_comparacao = [0.0_f32; 14];
-        for j in 0..14 {
-            let bytes = &vec_bytes[j*4..(j+1)*4];
-            vetor_comparacao[j] = f32::from_le_bytes(bytes.try_into().unwrap());
+        for (j, chunk) in vec_bytes.chunks_exact(4).enumerate() {
+            vetor_comparacao[j] = f32::from_le_bytes(chunk.try_into().unwrap());
         }
 
         distancia = distancia_euclidiana(&input_vector, &vetor_comparacao);
@@ -221,12 +216,6 @@ async fn fraud_score(
     }
     
     let score = (mais_proximos[1]  + mais_proximos[3] + mais_proximos[5] + mais_proximos[7] + mais_proximos[9]) / 5.0; 
-    print!("Score: {}", score);
-    print!(" - Vizinhos mais próximos (distância, label): ");
-    for k in 0..5 {
-        print!("({:.4}, {}) ", mais_proximos[k*2], mais_proximos[k*2 + 1] as u8);
-    }
-    io::stdout().flush().ok();
 
     Json(FraudResponse {
         approved: score < 0.6,
@@ -240,15 +229,11 @@ async fn main() {
     let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| "test.bin".to_string());
     let file = File::open(&db_path)
         .unwrap_or_else(|e| panic!("Falha ao abrir o dataset binário em '{}': {}", db_path, e));
-    let metadata = std::fs::metadata("test.bin").expect("ERRO: Arquivo test.bin não encontrado!");
-    println!("Arquivo test.bin encontrado. Tamanho: {} bytes", metadata.len());
     
     // 2. Faz o mapeamento na memória (mmap)
     // Usamos unsafe porque se o arquivo for modificado externamente enquanto mapeado, é Undefined Behavior.
     // Na Rinha, o arquivo é estático, então é seguro.
     let mmap = unsafe { Mmap::map(&file).expect("Falha ao mapear o arquivo") };
-
-    println!("Dataset mapeado com sucesso. Tamanho: {} bytes", mmap.len());
 
     let state = Arc::new(AppState {
         data: mmap,

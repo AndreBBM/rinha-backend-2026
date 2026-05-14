@@ -18,5 +18,6 @@ Thumbs.db
 
 # Local large/generated artifacts (keep out of Git)
 /test.txt
+/test.bin
 
 /todo.txt

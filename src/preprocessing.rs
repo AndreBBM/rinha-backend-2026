@@ -1,7 +1,7 @@
 use flate2::read::GzDecoder;
 use serde::Deserialize;
-use std::fs::{File, OpenOptions};
-use std::io::{BufWriter, BufReader, Read, Write};
+use std::fs::{File};
+use std::io::{BufWriter, BufReader, Write};
 
 #[derive(Deserialize, Debug)]
 struct MyData {
@@ -44,12 +44,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     writer.flush()?;
-
-    // le 57 bytes do arquivo binário
-    // let mut file = File::open("test.bin")?;
-    // let mut buffer = [0u8; 57]; // 14 floats * 4 bytes + 1 byte label = 57 bytes
-    // file.read_exact(&mut buffer)?;
-    // println!("Binary data read back: {:?}", buffer);
     
     Ok(())
     
